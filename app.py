@@ -86,6 +86,8 @@ def fetch_employee_static():
 
     query = """
         SELECT s.pc_name, s.cpu_model, s.ram_size_gb, s.storage_size_gb, s.os_version, 
+        s.ip_address, s.bios_version, s.expansion_slots_motherboard, s.pc_location, 
+        s.system_serial_number, s.motherboard_serial_number, s.bios_serial_number
         FROM Static_Data s
         INNER JOIN (
             SELECT pc_name, MAX(record_date) AS latest_date
