@@ -57,14 +57,14 @@ def fetch_employee_data(date_filter=None):
         SELECT e.emp_id, e.name, e.pc_number, d.record_timestamp,
                d.cpu_utilization_percent, d.gpu_utilization_percent, d.ram_utilization_percent,
                d.disk_usage_percent, d.ethernet_utilization_percent,
-               d.top_cpu_process, d.top_gpu_process, d.top_ram_process, 
+               d.top_cpu_process, d.top_gpu_process, d.top_ram_process 
         FROM Employee e
         JOIN Dynamic_Data d ON e.pc_number = d.pc_name
     """
     params = []
     if date_filter:
         query += " WHERE DATE(d.record_timestamp) = %s"
-        params.append(date_filter)
+        params.append(date_filter.strftime("%Y-%m-%d"))
 
     try:
         cursor.execute(query, params)
@@ -255,7 +255,7 @@ def show_admin_dashboard():
     with col1:
         date_filter = st.date_input("📅 Select Date")
     with col2:
-        metric = st.selectbox("📈 Select Metric", ["CPU", "GPU", "RAM"])
+        metric = st.selectbox("📈 Select Metric", ["CPU", "GPU", "RAM","Ethernet","Disk-Usage"])
     with col3:
         analyze = st.button("🔍 Analyze")
 
@@ -282,6 +282,14 @@ def show_admin_dashboard():
                     y_col = "gpu_utilization_percent"
                     hover_col = "top_gpu_process"
                     y_label = "GPU Utilization (%)"
+                elif metric == "Ethernet":
+                    y_col = "ethernet_utilization_percent"
+                    y_label = "Ethernet (%)"
+                    hover_col = None
+                elif metric == "Disk-Usage":
+                    y_col = "disk_usage_percent"
+                    y_label = "Disk-Usage (%)"
+                    hover_col = None
                 else:
                     y_col = "ram_utilization_percent"
                     hover_col = "top_ram_process"
@@ -293,7 +301,9 @@ def show_admin_dashboard():
                 plot_df = emp_df.loc[valid_mask].copy()
 
                 if not plot_df.empty:
-                    hover_vals = plot_df[hover_col].fillna("N/A").replace("", "N/A").astype(str)
+                    hover_vals = None
+                    if hover_col and hover_col in plot_df.columns:
+                        hover_vals = plot_df[hover_col].fillna("N/A").replace("", "N/A").astype(str)
 
                     fig = px.line(
                         plot_df,
@@ -304,15 +314,14 @@ def show_admin_dashboard():
                         labels={y_col: y_label, "record_timestamp": "Time"},
                         hover_data={y_col: True, "record_timestamp": True}
                     )
-                    fig.update_traces(
-                        customdata=hover_vals.values,
-                        mode="lines+markers",
-                        hovertemplate="<b>%{customdata}</b><br>Time: %{x}<br>Utilization: %{y}%"
-                    )
+                    if hover_vals is not None:
+                        fig.update_traces(
+                            customdata=hover_vals.values,
+                            hovertemplate="<b>%{customdata}</b><br>Time: %{x}<br>Utilization: %{y}%"
+                        )
+                    fig.update_traces(mode="lines+markers")
                     st.plotly_chart(fig, use_container_width=True)
-                # else: per requirement, show nothing when no valid points
 
-            # Static Specs (no gpu_model in schema)
             # Static Specs (always latest, from Static_Data)
             with col_right:
                 static_df = fetch_employee_static()
@@ -325,9 +334,9 @@ def show_admin_dashboard():
                     st.write(f"**RAM:** {specs_dict.get('ram_size_gb', 'N/A')} GB")
                     st.write(f"**Storage:** {specs_dict.get('storage_size_gb', 'N/A')} GB")
                     st.write(f"**OS:** {specs_dict.get('os_version', 'N/A')}")
+                    st.write(f"**📍 Location:** {specs_dict.get('pc_location', 'N/A')}")
                 else:
                     st.warning("⚠️ Specs not available.")
-
 
 
 # -------------------- GRAPH STATS (Grid of Graphs only) --------------------
