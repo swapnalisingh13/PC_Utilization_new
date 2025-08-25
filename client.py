@@ -81,7 +81,16 @@ def get_static_data():
         board = c.Win32_BaseBoard()[0]
 
         data['bios_version'] = getattr(bios, "SMBIOSBIOSVersion", None)
-        data['expansion_slots_motherboard'] = getattr(board, "Product", None)
+
+        # -------- Expansion Slot Summary --------
+        try:
+            slots = c.Win32_SystemSlot()
+            used = sum(1 for s in slots if getattr(s, "CurrentUsage", 0) == 4)   # 4 = In Use
+            free = sum(1 for s in slots if getattr(s, "CurrentUsage", 0) == 3)   # 3 = Available
+            data['expansion_slots_motherboard'] = f"{used} used, {free} free"
+        except Exception as e:
+            print("[SLOT ERROR]", e)
+            data['expansion_slots_motherboard'] = "Unavailable"
 
         # Handle serial numbers with fallback
         def clean_serial(value):
@@ -102,13 +111,14 @@ def get_static_data():
         except Exception as e:
             print("[LOCATION ERROR]", e)
             data['pc_location'] = "Unknown"
-        # ----------------------------------------------
+
     except Exception as e:
         print("[STATIC EXTRA ERROR]", e)
     # ------------------------------------
 
     print("[STATIC DATA] Sending:", data)
     return data
+
 
 
 def get_friendly_name_from_registry(exe_name):
