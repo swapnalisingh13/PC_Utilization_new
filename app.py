@@ -7,13 +7,14 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
+import matplotlib.dates as mdates
 from reportlab.lib import colors
 import matplotlib.pyplot as plt
 import io
 import datetime as dt 
 import pandas as pd
 
-#same as app1 in backup when created or when all the parts are last time working correct
+#not in backup, will make it.
 #added logic of slatest static data retrival and update static instead of everyday to once when start up
 
 #added logic of report button 
@@ -739,15 +740,12 @@ def export_pdf(title, content_blocks, landscape_mode=False, start_date=None, end
             period_text = f"Period: {start_date} to {end_date}"
         elements.append(Paragraph(period_text, normal_style))
 
-
     elements.append(Spacer(1, 12))
 
     # --- Content Blocks ---
     for block in content_blocks:
         if isinstance(block, str):
-            # Subheading with bullets (Critical, Imbalance, Idle)
             if any(block.startswith(prefix) for prefix in ["Critical Alerts:", "Imbalance Alerts:", "Idle Alerts:"]):
-
                 label, values = block.split(":", 1)
                 elements.append(Paragraph(label.strip(), subheader_style))
 
@@ -764,7 +762,6 @@ def export_pdf(title, content_blocks, landscape_mode=False, start_date=None, end
                 elements.append(Spacer(1, 12))
 
         elif isinstance(block, pd.DataFrame):
-            # --- Wrap text in DataFrame cells (fix for Report 1) ---
             col_widths = [doc.width / len(block.columns)] * len(block.columns)
             data = []
             for i, row in enumerate([block.columns.tolist()] + block.values.tolist()):
@@ -789,11 +786,12 @@ def export_pdf(title, content_blocks, landscape_mode=False, start_date=None, end
             elements.append(Spacer(1, 12))
 
         elif isinstance(block, io.BytesIO):  # Chart images
-            img = Image(block, width=6*inch, height=3*inch)
+            # 🔹 Slightly wider chart to spread x-ticks
+            img = Image(block, width=7.5*inch, height=3*inch)
             elements.append(img)
-            elements.append(Spacer(1, 12))
+            elements.append(Spacer(1, 16))
 
-    # --- Footer with callback ---
+    # --- Footer ---
     def add_footer(canvas, doc):
         canvas.saveState()
         footer_text = "Pioneer Foundations Engineer"
@@ -806,6 +804,7 @@ def export_pdf(title, content_blocks, landscape_mode=False, start_date=None, end
     pdf = buffer.getvalue()
     buffer.close()
     return pdf
+
 
 
 
