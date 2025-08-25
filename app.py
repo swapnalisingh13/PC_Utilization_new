@@ -14,7 +14,7 @@ import io
 import datetime as dt 
 import pandas as pd
 
-#not in backup, will make it.
+# app file in backup ready, will make it.
 #added logic of slatest static data retrival and update static instead of everyday to once when start up
 
 #added logic of report button 
