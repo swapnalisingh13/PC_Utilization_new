@@ -20,7 +20,7 @@ import wmi
 #testing through office pc
 #STATIC_ENDPOINT = "https://mzknxfbr-5000.inc1.devtunnels.ms/add_static"
 #DYNAMIC_ENDPOINT = "https://mzknxfbr-5000.inc1.devtunnels.ms/add_dynamic"
-#my laptop wifi ipv4 address- 192.168.0.169
+#my laptop wifi ipv4 address-
 
 STATIC_ENDPOINT = "http://192.168.0.221:6060/add_static"
 DYNAMIC_ENDPOINT = "http://192.168.0.221:6060/add_dynamic"
