@@ -5,18 +5,18 @@ app = Flask(__name__)
 
 # === Database Config ===
 db_config = {
-    'host': 'localhost',   # On Hostinger, keep "srv1674.hstgr.io"
-    'user': 'root',
-    'password': 'root@303',
-    'database': 'hpa_pc2'
-}
-'''
-#online mysql has been connected can use it when want to test with mysql new hosted online
-db_config = {
     'host': 'srv1674.hstgr.io',   # On Hostinger, keep "localhost"
     'user': 'u221987201_hpa_root',
     'password': 'Root@303',
     'database': 'u221987201_hpa_pc'
+}
+'''
+#online mysql has been connected can use it when want to test with mysql new hosted online
+db_config = {
+    'host': 'localhost',   # On Hostinger, keep "srv1674.hstgr.io"
+    'user': 'root',
+    'password': 'root@303',
+    'database': 'hpa_pc2'
 }
 '''
 

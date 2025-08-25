@@ -22,10 +22,10 @@ import wmi
 #DYNAMIC_ENDPOINT = "https://mzknxfbr-5000.inc1.devtunnels.ms/add_dynamic"
 #my laptop wifi ipv4 address- 192.168.0.169
 
-STATIC_ENDPOINT = "http://192.168.0.221:5001/add_static"
-DYNAMIC_ENDPOINT = "http://192.168.0.221:5001/add_dynamic"
-
-__version__= "v1.0"
+STATIC_ENDPOINT = "http://192.168.0.221:6060/add_static"
+DYNAMIC_ENDPOINT = "http://192.168.0.221:6060/add_dynamic"
+#used port 6060 for deployment pc
+__version__= "v2.1"
 
 SECRET_KEY = "my_super_secret_key_123"
 
