@@ -31,7 +31,8 @@ DB_CONFIG = {
 # -------------------- LOGIN ENDPOINT --------------------
 #LOGIN_ENDPOINT = "http://127.0.0.1:5000/login"
 #onlyt the bottom for when the server is active in the deployment pc
-LOGIN_ENDPOINT = "http://192.168.0.221:6060/login"
+#LOGIN_ENDPOINT = "http://192.168.0.221:6060/login"
+LOGIN_ENDPOINT = "https://gg013bf2-6060.inc1.devtunnels.ms/"     #based on visual studio port forwarding 6060
 # -------------------- SESSION STATE --------------------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
