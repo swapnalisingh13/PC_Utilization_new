@@ -54,6 +54,38 @@ except Exception as e:
 def get_pc_name():
     return platform.node()
 
+def get_expansion_slots_summary():
+    try:
+        c = wmi.WMI()
+        slots = c.Win32_SystemSlot()
+        summary_parts = []
+        free_count = 0
+
+        for slot in slots:
+            usage = getattr(slot, "CurrentUsage", None)
+            designation = getattr(slot, "SlotDesignation", "Unknown")
+
+            if usage == 4:  # In Use
+                # Try to guess device type based on slot name (basic, not always accurate)
+                if "16" in designation or "J36" in designation:
+                    device = "GPU"
+                elif "x1" in designation or "J37" in designation:
+                    device = "NIC/Other"
+                else:
+                    device = "Expansion Card"
+                summary_parts.append(f"{device} in Slot {designation}")
+            elif usage == 3:  # Available
+                free_count += 1
+
+        if free_count > 0:
+            summary_parts.append(f"{free_count} free")
+
+        return ", ".join(summary_parts) if summary_parts else "No expansion slot info"
+    except Exception as e:
+        print("[EXPANSION SLOT ERROR]", e)
+        return "Unavailable"
+
+
 def get_static_data():
     cpu_model = platform.processor()
     logical_processors = psutil.cpu_count(logical=True)
@@ -83,14 +115,7 @@ def get_static_data():
         data['bios_version'] = getattr(bios, "SMBIOSBIOSVersion", None)
 
         # -------- Expansion Slot Summary --------
-        try:
-            slots = c.Win32_SystemSlot()
-            used = sum(1 for s in slots if getattr(s, "CurrentUsage", 0) == 4)   # 4 = In Use
-            free = sum(1 for s in slots if getattr(s, "CurrentUsage", 0) == 3)   # 3 = Available
-            data['expansion_slots_motherboard'] = f"{used} used, {free} free"
-        except Exception as e:
-            print("[SLOT ERROR]", e)
-            data['expansion_slots_motherboard'] = "Unavailable"
+        data['expansion_slots_motherboard'] = get_expansion_slots_summary()
 
         # Handle serial numbers with fallback
         def clean_serial(value):
