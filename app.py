@@ -231,6 +231,9 @@ def show_admin_dashboard():
 
 
 
+
+
+
 # --------------------Employee detail update ----------
 def show_employee_details():
     st.title("👨‍💻 Employee Details")
@@ -343,8 +346,6 @@ def show_dashboard():
         elif page == "Employee Details":
             show_employee_details()
             #st.write("Employee under construciton")
-
-            
     else:
         st.error("🚫 Only Admin access is implemented right now.")
 
