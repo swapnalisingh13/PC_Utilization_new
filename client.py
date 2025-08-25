@@ -82,9 +82,16 @@ def get_static_data():
 
         data['bios_version'] = getattr(bios, "SMBIOSBIOSVersion", None)
         data['expansion_slots_motherboard'] = getattr(board, "Product", None)
-        data['system_serial_number'] = getattr(bios, "SerialNumber", None)
-        data['motherboard_serial_number'] = getattr(board, "SerialNumber", None)
-        data['bios_serial_number'] = getattr(bios, "SerialNumber", None)
+
+        # Handle serial numbers with fallback
+        def clean_serial(value):
+            if not value or value.strip().lower() == "default string":
+                return "Unavailable"
+            return value
+
+        data['system_serial_number'] = clean_serial(getattr(c.Win32_ComputerSystemProduct()[0], "IdentifyingNumber", None))
+        data['motherboard_serial_number'] = clean_serial(getattr(board, "SerialNumber", None))
+        data['bios_serial_number'] = clean_serial(getattr(bios, "SerialNumber", None))
 
         # --------- LOCATION (city + lat,long) ---------
         try:
