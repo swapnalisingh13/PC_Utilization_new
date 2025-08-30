@@ -466,27 +466,28 @@ def fetch_data(start_date, end_date, group_by="month"):
 
 # ------------------- Generate ALERT LOGIC -------------------
 def generate_alerts(df):
-    critical, imbalance, idle = [], [], []
+    critical, imbalance, idle = set(), set(), set()
 
     for _, row in df.iterrows():
         pc = row['pc_name']
         cpu, ram, gpu = row['avg_cpu'], row['avg_ram'], row['avg_gpu']
 
         if cpu > 85 and ram > 85 and gpu > 85:
-            critical.append(f"{pc} is heavily overutilized across CPU, RAM, and GPU.")
+            critical.add(f"{pc} is heavily overutilized across CPU | RAM | GPU.")
         elif cpu < 20 and ram < 20 and gpu < 20:
-            idle.append(f"{pc} is mostly idle across CPU, RAM, and GPU.")
+            idle.add(f"{pc} is mostly idle across CPU | RAM | GPU.")
         else:
             if cpu < 20 and ram > 80:
-                imbalance.append(f"{pc}: CPU is underused while RAM is overloaded.")
+                imbalance.add(f"{pc}: CPU is underused while RAM is overloaded.")
             elif cpu > 80 and ram < 20:
-                imbalance.append(f"{pc}: CPU is overworked while RAM remains idle.")
+                imbalance.add(f"{pc}: CPU is overworked while RAM remains idle.")
             elif gpu > 80 and cpu < 20 and ram < 20:
-                imbalance.append(f"{pc}: GPU is overutilized while CPU and RAM are idle.")
+                imbalance.add(f"{pc}: GPU is overutilized while CPU and RAM are idle.")
             elif gpu < 20 and cpu > 80 and ram > 80:
-                imbalance.append(f"{pc}: GPU is idle while CPU and RAM are overworked.")
+                imbalance.add(f"{pc}: GPU is idle while CPU and RAM are overworked.")
 
-    return critical, imbalance, idle
+    return list(critical), list(imbalance), list(idle)
+
 
 
 # ------------------- Show Alerts -------------------
