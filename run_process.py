@@ -2,7 +2,7 @@ import subprocess
 import psutil
 
 # Task details
-task_name = "Run HPA Client"
+task_name = "Run HPA Client"                 #task name to run as
 batch_file = r"C:\path\to\your\script.bat"   # change this to your .bat file
 process_name = "client.exe"                  # process to kill before running
 
