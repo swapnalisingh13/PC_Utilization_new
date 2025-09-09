@@ -14,7 +14,7 @@ import io
 import datetime as dt 
 import pandas as pd
 
-#not in backup, will make it.
+# app file in backup ready, will make it.
 #added logic of slatest static data retrival and update static instead of everyday to once when start up
 
 #added logic of report button 
@@ -32,6 +32,7 @@ DB_CONFIG = {
 #LOGIN_ENDPOINT = "http://127.0.0.1:5000/login"
 #onlyt the bottom for when the server is active in the deployment pc
 LOGIN_ENDPOINT = "http://192.168.0.221:6060/login"
+#LOGIN_ENDPOINT = "https://gg013bf2-6060.inc1.devtunnels.ms//login"
 # -------------------- SESSION STATE --------------------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -420,7 +421,7 @@ def show_individual_stats():
             st.write(f"**BIOS Serial Number:** {specs_dict.get('bios_serial_number', 'N/A')}")
 
         else:
-            st.warning("⚠️ Specs not found for this employee’s PC.")
+            st.warning("⚠️ Specs not found for this employee's PC.")
     else:
         st.warning("⚠️ Employee PC number missing in records.")
 
@@ -465,27 +466,27 @@ def fetch_data(start_date, end_date, group_by="month"):
 
 # ------------------- Generate ALERT LOGIC -------------------
 def generate_alerts(df):
-    critical, imbalance, idle = [], [], []
+    critical, imbalance, idle = set(), set(), set()
 
     for _, row in df.iterrows():
         pc = row['pc_name']
         cpu, ram, gpu = row['avg_cpu'], row['avg_ram'], row['avg_gpu']
 
         if cpu > 85 and ram > 85 and gpu > 85:
-            critical.append(f"{pc} is heavily overutilized across CPU, RAM, and GPU.")
+            critical.add(f"{pc} is heavily overutilized across CPU | RAM | GPU.")
         elif cpu < 20 and ram < 20 and gpu < 20:
-            idle.append(f"{pc} is mostly idle across CPU, RAM, and GPU.")
+            idle.add(f"{pc} is mostly idle across CPU | RAM | GPU.")
         else:
             if cpu < 20 and ram > 80:
-                imbalance.append(f"{pc}: CPU is underused while RAM is overloaded.")
+                imbalance.add(f"{pc}: CPU is underused while RAM is overloaded.")
             elif cpu > 80 and ram < 20:
-                imbalance.append(f"{pc}: CPU is overworked while RAM remains idle.")
+                imbalance.add(f"{pc}: CPU is overworked while RAM remains idle.")
             elif gpu > 80 and cpu < 20 and ram < 20:
-                imbalance.append(f"{pc}: GPU is overutilized while CPU and RAM are idle.")
+                imbalance.add(f"{pc}: GPU is overutilized while CPU and RAM are idle.")
             elif gpu < 20 and cpu > 80 and ram > 80:
-                imbalance.append(f"{pc}: GPU is idle while CPU and RAM are overworked.")
+                imbalance.add(f"{pc}: GPU is idle while CPU and RAM are overworked.")
 
-    return critical, imbalance, idle
+    return list(critical), list(imbalance), list(idle)
 
 
 # ------------------- Show Alerts -------------------
@@ -812,7 +813,7 @@ def show_employee_details():
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # 🔹 Get all PC names from Static_Data/Dynamic_Data
+    # 🔹 Get available PCs
     cursor.execute("""
         SELECT DISTINCT s.pc_name
         FROM Static_Data s
@@ -826,22 +827,23 @@ def show_employee_details():
     """)
     available_pcs = [row["pc_name"] for row in cursor.fetchall()]
 
-    # 🔹 Also get all existing employee-PC mappings (for update)
+    # 🔹 Existing Employee-PC mappings
     cursor.execute("SELECT * FROM Employee")
     existing_records = cursor.fetchall()
     conn.close()
 
-    # Dropdown for PC number (unlinked ones first, or manual entry)
-    pc_number = st.selectbox(
-        "PC Number (from collected data but not yet linked)",
-        options=["-- Enter Manually --"] + available_pcs
-    )
+    # Dropdown
+    pc_number = st.selectbox("PC Number", ["-- Enter Manually --"] + available_pcs)
     if pc_number == "-- Enter Manually --":
         pc_number = st.text_input("Enter PC Number manually")
 
     emp_id = st.text_input("Employee ID")
     emp_name = st.text_input("Employee Name")
     office_location = st.text_input("Office Location", value="Mumbai")
+
+    # ✅ State to track conflict
+    if "conflict_pc" not in st.session_state:
+        st.session_state.conflict_pc = None
 
     if st.button("💾 Save Employee"):
         if not emp_id or not emp_name or not pc_number:
@@ -851,21 +853,12 @@ def show_employee_details():
                 conn = get_connection()
                 cursor = conn.cursor(dictionary=True)
 
-                # check if PC already exists
                 cursor.execute("SELECT * FROM Employee WHERE pc_number = %s", (pc_number,))
                 exists = cursor.fetchone()
 
                 if exists:
                     st.info(f"ℹ️ This PC `{pc_number}` is already assigned to: {exists['name']} ({exists['emp_id']})")
-
-                    if st.confirm("Do you want to update this employee's details?"):
-                        cursor.execute("""
-                            UPDATE Employee
-                            SET emp_id = %s, name = %s, office_location = %s
-                            WHERE pc_number = %s
-                        """, (emp_id, emp_name, office_location, pc_number))
-                        conn.commit()
-                        st.success(f"✅ Employee details updated for PC `{pc_number}`")
+                    st.session_state.conflict_pc = pc_number  # mark conflict
                 else:
                     cursor.execute(
                         "INSERT INTO Employee (emp_id, name, pc_number, office_location) VALUES (%s, %s, %s, %s)",
@@ -873,11 +866,35 @@ def show_employee_details():
                     )
                     conn.commit()
                     st.success(f"✅ Employee `{emp_name}` added and linked to PC `{pc_number}`")
+                    st.session_state.conflict_pc = None  # reset
 
             except Exception as e:
                 st.error(f"❌ Database error: {e}")
             finally:
                 conn.close()
+
+    # ✅ If conflict, show an "Update Employee" button
+    if st.session_state.conflict_pc == pc_number:
+        if st.button("🔄 Update Employee"):
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE Employee
+                    SET emp_id = %s, name = %s, office_location = %s
+                    WHERE pc_number = %s
+                """, (emp_id, emp_name, office_location, pc_number))
+                conn.commit()
+                st.success(f"✅ Employee details updated for PC `{pc_number}`")
+
+                # reset conflict
+                st.session_state.conflict_pc = None
+            except Exception as e:
+                st.error(f"❌ Database error: {e}")
+            finally:
+                conn.close()
+
+
 
 
 # -------------------- MAIN ROUTER --------------------

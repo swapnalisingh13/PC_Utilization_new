@@ -421,7 +421,7 @@ def show_individual_stats():
             st.write(f"**BIOS Serial Number:** {specs_dict.get('bios_serial_number', 'N/A')}")
 
         else:
-            st.warning("⚠️ Specs not found for this employee’s PC.")
+            st.warning("⚠️ Specs not found for this employee's PC.")
     else:
         st.warning("⚠️ Employee PC number missing in records.")
 
