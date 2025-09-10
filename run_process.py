@@ -1,27 +1,31 @@
 import subprocess
 import psutil
 
-# Task details
-task_name = "Run HPA Client"                 #task name to run as
-batch_file = r"C:\path\to\your\script.bat"   # change this to your .bat file
-process_name = "client.exe"                  # process to kill before running
+# Configurable settings
+task_name = "Run HPA Client"
+batch_file = r"V:\_For Wasim Sir\dist\run_client.bat"
+process_name = "client.exe"
 
-# 1. Kill process if running
 def kill_program(proc_name):
     for proc in psutil.process_iter(['pid', 'name']):
         if proc_name.lower() in proc.info['name'].lower():
-            print(f"Killing {proc.info['name']} (PID: {proc.info['pid']})")
-            psutil.Process(proc.info['pid']).terminate()
+            try:
+                print(f"Killing {proc.info['name']} (PID: {proc.info['pid']})")
+                psutil.Process(proc.info['pid']).terminate()
+            except psutil.AccessDenied:
+                print(f"Access denied for PID {proc.info['pid']}")
+            except Exception as e:
+                print(f"Failed to kill process: {e}")
 
 kill_program(process_name)
 
-# 2. Create/Update scheduled task
+# Create task
 subprocess.run(
     f'schtasks /create /tn "{task_name}" /tr "{batch_file}" /sc onlogon /rl HIGHEST /f',
     shell=True
 )
 
-# 3. Run the task immediately
+# Run task
 subprocess.run(f'schtasks /run /tn "{task_name}"', shell=True)
 
-print(f"Task '{task_name}' created, old '{process_name}' killed (if running), and started successfully.")
+print("Task created and executed.")
